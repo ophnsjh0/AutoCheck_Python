@@ -1,0 +1,4 @@
+192.168.190.150	    23	admin	 1234qwer	telnet	cisco
+192.168.190.151	    23	admin	 1234qwer	telnet	cisco
+192.168.190.152	    22	admin	 1234qwer	ssh 	cisco
+192.168.190.150	    22	admin	 1234qwer	telnet 	juniper
