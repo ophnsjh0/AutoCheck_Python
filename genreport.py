@@ -4,8 +4,11 @@ import datetime
 import sys
 # from openpyxl import *
 import openpyxl as xl
-from C35xx.parse import *
-from C35xx.getrawdata import *
+from model.parse import *
+from model.parse2 import *
+from model.getrawdata import *
+from model.juniper_getdata import *
+from model.citrix_getdata import *
 
 
 ##  txt 파일 Array 변환 ##
@@ -32,11 +35,12 @@ def get_switch_info(file):
                 switch.append(tmp)
                 # print(tmp)
                 # print(switch)
-    print(switch)
+    # print(switch)
     return switch
 
 
 def gensimplerep(switch, anchor):
+    print(switch)
     wb = xl.load_workbook('report.xlsx')
     ws = wb['simple_report']
     ws['D'+str(anchor)] = switch['model']
@@ -64,31 +68,72 @@ def repmain():
     for i in sw:
         print(anchor-3)
         protocol = i[4]
-        data = C35xxGetRawData(i)
-        if protocol == 'ssh':
-            raw = data.get_ssh()
-        elif protocol == 'telnet':
-            raw = data.get_telnet()
-        else:
-            print('Not supported!!!\n')
-        del data
-        switch = C35xxParse(raw)
-        model = switch.getmodel()
-        p = re.compile('2950')
-        m = p.search(model['model'])
-        if m:
+        vendor = i[5]
+        if vendor == 'cisco':
+            data = CiscoIOS(i)
+            if protocol == 'ssh':
+                raw = data.get_ssh()
+            elif protocol == 'telnet':
+                raw = data.get_telnet()
+            elif protocol == 'tacacs':
+                raw = data.get_tacacs()
+            else:
+                print('Not supported!!!\n')
+            del data
+            switch = CiscoIOSParse(raw)
+            gensimplerep(switch.saveresult(), anchor)
+            anchor +=1
+            del switch       
+        elif vendor == 'juniper':
+            data = Juniper(i)
+            if protocol == 'ssh':
+                raw = data.get_ssh()
+            elif protocol == 'telnet':
+                raw = data.get_telnet()
+            elif protocol == 'tacacs':
+                raw = data.get_tacacs()
+            else:
+                print('Not supported!!!\n')
+            del data
+            switch = juniperParse(raw)
+            gensimplerep(switch.saveresult(), anchor)
+            anchor +=1
             del switch
-            switch = C2950Parse(raw)
-        gensimplerep(switch.saveresult(), anchor)
-        anchor += 1
-        del switch
+        elif vendor == 'citrix':
+            data = Citrix(i)
+            if protocol == 'ssh':
+                raw = data.get_ssh()
+            elif protocol == 'telnet':
+                raw = data.get_telnet()
+            elif protocol == 'tacacs':
+                raw = data.get_tacacs()
+            else:
+                print('Not supported!!!\n')
+            del data
+            switch = citrixParse(raw)
+            gensimplerep(switch.saveresult(), anchor)
+            anchor +=1
+            del switch
+        else:
+            print("Not supported vendor!!\n")
+        # switch = CiscoIOSParse(raw)
+        # switch = juniperParse(raw)
+        # model = switch.getmodel()
+        # p = re.compile('2950')
+        # m = p.search(model['model'])
+        # if m:
+        #     del switch
+        #     switch = C2950Parse(raw)
+        # gensimplerep(switch.saveresult(), anchor)
+        # anchor +=1
+        # del switch
 
 
 if __name__ == '__main__':
     print('+-------------------------------------------------------------+')
-    print('| Cisco L2 (35xx, 29xx) switch simple maintenance tool...     |')
+    print('| Auto Check Application                                      |')
     print('| version 0.0.1                                               |')
-    print('| Scripted by snowffox, Nov. 2018                             |')
+    print('| Scripted by Shin 2022.06.09                                 |')
     print('+-------------------------------------------------------------+')
     repmain()
     print('Done!!!')
